@@ -1,36 +1,33 @@
-# This is a basic workflow to help you get started with Actions
+name: OWASP ZAP Scan
 
-name: CI
-
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main  # Adjust the branch name as needed
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Use the latest available Ubuntu environment
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Build and Test
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          npm install
+          npm test
+
+      - name: OWASP ZAP Scan
+        run: |
+          # Pull the OWASP ZAP Docker image
+          docker pull owasp/zap2docker-stable
+
+          # Run the OWASP ZAP scan in a Docker container
+          docker run -v $PWD:/zap/wrk/:rw -t owasp/zap2docker-stable zap-baseline.py -t http://your-webapp-url -g gen.conf -r zap-report.html
+
+      - name: Publish OWASP ZAP Report
+        uses: actions/upload-artifact@v2
+        with:
+          name: zap-report
+          path: zap-report.html
